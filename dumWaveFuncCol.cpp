@@ -8,15 +8,58 @@
 
 
 int betterRand() {
-    // Get high-resolution time in microseconds
+    // Get high-resolution time in microseconds as a seed
     auto now = std::chrono::high_resolution_clock::now();
     auto microseconds_since_epoch = std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()).count();
 
-    // Use microseconds as a seed for a random engine
-    std::mt19937 rng(static_cast<unsigned int>(microseconds_since_epoch)); // Mersenne Twister PRNG
-    std::uniform_int_distribution<int> dist(0, 100); // Adjust range as needed
+    // Initialize the random number generator with the time-based seed
+    std::mt19937 rng(static_cast<unsigned int>(microseconds_since_epoch));
 
-    return dist(rng); // Return a random number
+    // Generate a random number without specifying a range
+    int random_number = rng(); // Generates a large random number
+
+    // Apply modulo operation to fit the desired range
+    return random_number;
+}
+
+void printColor(char ch)
+{
+	std::string red = "\033[31m";
+	std::string green = "\033[32m";
+	std::string yellow = "\033[33m";
+	std::string blue = "\033[34m";
+	std::string magenta = "\033[35m";
+	std::string reset = "\033[0m";  // Reset color
+	std::string color;
+	switch (ch)
+	{
+		case '-':
+			color = red;
+			break;
+		case '+':
+			color = green;
+			break;
+		case '*':
+			color = yellow;
+			break;
+		case '|':
+			color = blue;
+			break;
+		case '.':
+			color = magenta;
+			break;
+
+
+
+
+		default:
+			std::cout << ch;
+			return;
+	}
+    // Use variables to color text
+	std::string Message = color + ch + reset;
+
+	std::cout << Message;
 }
 
 
@@ -44,8 +87,8 @@ class Cell
 		Cell(int e = 10, char t = 'N', std::set<char> pt = {}) : entropy(e), tile(t), posibleTiles(pt) {} // fix entr init!!
 };
 
-const int HEIGHT = 25; //might completly change this later
-const int WIDTH = 50;
+const int HEIGHT = 30; //might completly change this later
+const int WIDTH = 30;
 
 class Field
 {
@@ -111,11 +154,12 @@ class Field
 				{
 					if (cells[y][x].tile == 'N')
 					{
-						//std::cout << cells[y][x].entropy << " "; // shows what entropy
-						std::cout << "  ";
+						std::cout << cells[y][x].entropy << " "; // shows what entropy
+						//std::cout << "{ ";
 					} else 
 					{
-						std::cout << cells[y][x].tile << " ";
+						printColor(cells[y][x].tile);
+						std::cout << " "; // probaly not
 					}
 				}
 				std::cout << std::endl;
@@ -139,12 +183,11 @@ class Field
 		}
 
 		void placeTile()
-		{
+		{	
 			int lowest = lowestEntr();
 			std::vector<int> fx;
 			std::vector<int> fy;
-
-			//fx.clear();
+					//fx.clear();
 
 			for (int y = 0; y < HEIGHT; y++) 
 			{
@@ -152,26 +195,27 @@ class Field
 				{
 					if (cells[y][x].entropy == lowest)
 					{	
-						if (cells[y][x].posibleTiles.size() == 0 || cells[y][x].tile != 'N'){continue;} //ah
+						if (cells[y][x].posibleTiles.size() == 0 || cells[y][x].tile != 'N'){continue;} //not the problem
 												      
 						fx.emplace_back(x);
 						fy.emplace_back(y);
-
 					}
 				}
 			}
+			if (fx.size() == 0) {return;} // not it
+			
 			int rn = betterRand() % fx.size();
 			int chosenCords[2];
 			chosenCords[0] = fx.at(rn);
 			chosenCords[1] = fy.at(rn);
 			int size = cells[chosenCords[1]][chosenCords[0]].posibleTiles.size();
 			int rindex = betterRand() % size;
+			rindex = abs(rindex);
 
-
-			auto it = cells[chosenCords[1]][chosenCords[0]].posibleTiles.begin();
+			auto it = cells[chosenCords[1]][chosenCords[0]].posibleTiles.begin(); // posibleTiles is never empty
 			std::advance(it, rindex);
 			cells[chosenCords[1]][chosenCords[0]].tile = *it;
-
+			//if (cells[chosenCords[1]][chosenCords[0]].posibleTiles.empty()) {std::cout << "error";}
 
 		}
 
@@ -190,6 +234,18 @@ class Field
 			}
 
 		}
+		void dumpRaw()
+		{
+			for (int y = 0; y < HEIGHT; y++) 
+			{
+				for (int x = 0; x < WIDTH; x++)
+				{
+					std::cout << cells[y][x].tile << x << y; //somthing is erasing cells.tile = ''	
+				}
+				std::cout << std::endl;
+			}
+
+		}
 
 };
 
@@ -199,27 +255,24 @@ int main()
 {
 	std::set<Tile> tiles = 
 	{
-		{' ', {' ', '+', '-'}},
-		{'+', {'+', ' ', '|'}},
+		{'.', {'.', '+', '-'}},	
+		{'+', {'+', '.', '|'}},
 		{'|', {'|', '+', '*'}},
-		{'*', {'*', '|', '='}},
-		{'=', {'=', '*', ' '}},
-		{'-', {'-', '=', ' '}}
+		{'*', {'*', '|', '-'}},
+		{'-', {'-', '*', '.'}}
 	};
 	
 
 	Field field1;
 	field1.tileSet = tiles;
 
-	field1.cells[11][19].tile = ' ';
-
-	for (int i = 0; i < 1000; i++)
-	{
-		field1.calcAllCells();
-		field1.placeTile();
-	}
 	
+	field1.calcAllCells();
+	for (int i = 0; i < WIDTH*HEIGHT; i++)
+	{
+		field1.placeTile();
+		field1.calcAllCells();
+	}
 	field1.printField();	
         field1.clear();
-
 }
