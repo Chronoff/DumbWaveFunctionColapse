@@ -206,7 +206,7 @@ int main()
 	
 	field1.printField();	
         field1.clear();
-	std::cout << "%%%%%%%%%%%%wow i changed this" << std::endl;
+	std::cout << "%%%%%%%%%%%%pepa" << std::endl;
 	for (int i = 0; i < 1000; i++)
 	{
 		field1.calcAllCells();
